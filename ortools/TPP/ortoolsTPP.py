@@ -8,7 +8,6 @@ This is a temporary script file.
 from ortools.linear_solver import pywraplp as otpl
 from ortools.init import pywrapinit
 import sys
-import pandas as pd
 import numpy as np
 from leitura import leitura
 
