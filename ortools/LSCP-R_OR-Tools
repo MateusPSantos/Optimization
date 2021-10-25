@@ -1,0 +1,141 @@
+from ortools.linear_solver import pywraplp as otpl
+from ortools.init import pywrapinit
+import numpy as np
+
+def leitura(name=None):
+    arquivo = open(name)
+    
+    n = int(arquivo.readline())
+    
+    PP = (np.zeros(n)).tolist()
+    PR = (np.zeros(n)).tolist()
+    
+    FP = (np.zeros(n)).tolist()
+    FR = (np.zeros(n)).tolist()
+    
+    FP[0] = int(arquivo.readline())
+    FR[0] = int(arquivo.readline())
+    
+    for i in range(1,n):
+        FP[i] = FP[0]
+        FR[i] = FR[0]
+        
+    HP = (np.zeros(n)).tolist()
+    HR = (np.zeros(n)).tolist()
+    
+    HR[0] = float(arquivo.readline())
+    HP[0] = int(arquivo.readline())
+    
+    for i in range(1,n):
+        HR[i] = HR[0]
+        HP[i] = HP[0]
+    
+    D = (np.zeros(n)).tolist()
+    R = (np.zeros(n)).tolist()
+    
+    texto = arquivo.readline().split()
+    for i in range(len(texto)):
+        D[i] = int(texto[i])
+        
+    texto = arquivo.readline().split()
+    for i in range(len(texto)):
+        R[i] = int(texto[i])
+        
+    
+    return n,PP,PR,FP,FR,HP,HR,D,R
+
+
+def minimo(a,b):
+    if a < b:
+        return a
+    else:
+        return b
+
+solver = otpl.Solver.CreateSolver('CBC')
+
+
+n,PP,PR,FP,FR,HP,HR,D,R = leitura('teste.txt')
+
+#### Variáveis
+## Manufatura
+x = (np.zeros(n)).tolist()
+y = (np.zeros(n)).tolist()
+s = (np.zeros(n)).tolist()
+## Remanufatura
+xr = (np.zeros(n)).tolist()
+yr = (np.zeros(n)).tolist()
+sr = (np.zeros(n)).tolist()
+
+### Capacidade
+C = (np.zeros(n)).tolist()
+
+for t in range(n):
+    C[t] = (1.5*sum(D))/n
+    
+
+for i in range(n):
+    x[i] = solver.IntVar(0, sum(D),'x({})'.format(i+1))
+    y[i] = solver.IntVar(0,1, 'y({})'.format(i+1))
+    s[i] = solver.IntVar(0, sum(D),'s({})'.format(i+1))
+    
+    xr[i] = solver.IntVar(0, sum(D),'x({})'.format(i+1))
+    yr[i] = solver.IntVar(0,1, 'y({})'.format(i+1))
+    sr[i] = solver.IntVar(0, sum(D),'s({})'.format(i+1))
+
+#função objetivo
+
+
+    
+solver.Minimize(sum(PP[t]*x[t]+FP[t]*y[t]+HP[t]*s[t] for t in range(n))  + sum(PR[t]*xr[t]+FR[t]*yr[t]+HR[t]*sr[t] for t in range(n)))
+
+solver.Add(x[0]+xr[0] == D[0]+s[0])
+
+for  t in range(1,n):
+    solver.Add(s[t-1] + x[t] + xr[t] == D[t]*s[t])
+    
+solver.Add(R[0] == xr[0] + sr[0])
+
+for  t in range(1,n):
+    solver.Add(sr[t-1] + R[t] == xr[t] +sr[t])
+    
+for t in range(n):
+    solver.Add(x[t] + xr[t] <= C[t])
+
+for t in range(n):
+    solver.Add(x[t] <= sum(D[i:]))
+ 
+    
+solver.Add(xr[0] <= min(R[0], sum(D)) ) 
+   
+for t in range(1,n):
+    
+    solver.Add(xr[t] <= sr[t-1]+R[t])
+    solver.Add(xr[t] <= sum(D[t:]))
+    
+
+solver.Add(s[0]==0)
+solver.Add(s[n-1]==0)
+solver.Add(sr[0]==0)
+
+
+
+status = solver.Solve()
+
+
+print('Objective value =', solver.Objective().Value())
+
+for j in range(n):
+    print(y[j].name(), ' = ', y[j].solution_value())
+print()
+
+for i in range(n):
+    print(x[i].name(), ' = ', x[i].solution_value())
+print()
+for j in range(n):
+    print(xr[j].name(), ' = ', xr[j].solution_value())
+        
+
+print()
+print('Problem solved in %f milliseconds' % solver.wall_time())
+print('Problem solved in %d iterations' % solver.iterations())
+print('Problem solved in %d branch-and-bound nodes' % solver.nodes())
