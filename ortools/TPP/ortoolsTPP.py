@@ -24,20 +24,16 @@ u = (np.zeros(n)).tolist()
 for i in range(n):
     
     for j in range(n):
-        x[i][j] = solver.IntVar(0,1,'x[%i][%i]'%(i,j))
+        x[i][j] = solver.IntVar(0,1,'x[%i][%i]'%(i+1,j+1))
     
-    y[i] = solver.IntVar(0,1,'y[%i]'%(i))
+    y[i] = solver.IntVar(0,1,'y[%i]'%(i+1))
     
 
 for k in range(m):
     maxq = 0
     
-    for j in range(n):
-        if maxq < produto[j][k]:
-            maxq = produto[j][k]
-    
     for i in range(n):
-        z[i][k] = solver.IntVar(0,maxq,'z[%i][%i]'%(i,k))
+        z[i][k] = solver.IntVar(0,produto[i][k],'z[%i][%i]'%(i+1,k+1))
         
         
         
@@ -65,7 +61,6 @@ for j in range(n):
 for i in range(n):
     solver.Add(x[i][i]==0)
     
-solver.Add(y[0] == 1)   
 
 #Restrição de demanda
 
@@ -85,7 +80,7 @@ for j in range(n):
 for i in range(1,n):
     for j in range(1,n):
         if i !=j:        
-            solver.Add(u[i] - u[j] - n*x[j][i] - (n-2)*x[i][j] >= -n+1)
+            solver.Add(u[j] - u[i] - n*x[i][j] - (n-2)*x[j][i] >= -n+1)
         else:
             solver.Add(u[i] - u[j] == 0)
 
@@ -96,7 +91,7 @@ for i in range(n):
     for j in range(n):
         obj.append(c[i][j]*x[i][j])
 
-for j in range(1,n):
+for j in range(n):
     for k in range(m):
         obj.append(custo[j][k]*z[j][k])
     
@@ -105,10 +100,12 @@ for j in range(1,n):
 
 solver.Minimize(sum(obj))
 
+
+
 status = solver.Solve()
 
 
-print('Objective value =', solver.Objective().Value())
+print('Objective value =', int(solver.Objective().Value()))
 
 for j in range(n):
     print(y[j].name(), ' = ', y[j].solution_value())
@@ -116,18 +113,19 @@ print()
 
 for i in range(n):
     for j in range(n):
-        print(x[i][j].name(), ' = ', x[i][j].solution_value())
+        if x[i][j].solution_value() > 0.9999:
+            print(x[i][j].name(), ' = ', x[i][j].solution_value())
 print()
 for j in range(n):
     for k in range(m):
-        print(z[j][k].name(), ' = ', z[j][k].solution_value())
+        if z[j][k].solution_value() > 0.0001:
+            print(z[j][k].name(), ' = ', z[j][k].solution_value())
         
 
 print()
 print('Problem solved in %f milliseconds' % solver.wall_time())
 print('Problem solved in %d iterations' % solver.iterations())
 print('Problem solved in %d branch-and-bound nodes' % solver.nodes())
-
     
     
     
