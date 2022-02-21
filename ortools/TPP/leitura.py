@@ -31,7 +31,7 @@ def leitura(nome=None):
         
     for i in range(num_cities):
         for j in range(num_cities):
-            distance[i][j] = np.sqrt((x_vector[j]-x_vector[i])**2 + (y_vector[j]-y_vector[j])**2)
+            distance[i][j] = np.sqrt((x_vector[j]-x_vector[i])**2 + (y_vector[j]-y_vector[i])**2)
 
 
     arquivo.readline()
